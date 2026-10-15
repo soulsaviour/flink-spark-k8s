@@ -1,0 +1,13 @@
+# apache/flink-kubernetes-operator 1.16.1
+# Only manage Flink jobs in the "flink" namespace; the chart creates the
+# "flink" service account and RBAC there for the job pods.
+watchNamespaces:
+  - flink
+
+operatorPod:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 512Mi

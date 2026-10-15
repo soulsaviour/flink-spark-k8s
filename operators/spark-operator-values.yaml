@@ -1,0 +1,17 @@
+# kubeflow/spark-operator 2.5.2
+spark:
+  # Namespaces SparkApplications may run in; the chart creates the driver's
+  # service account and RBAC there.
+  jobNamespaces:
+    - spark-jobs
+
+controller:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+
+webhook:
+  enable: true
