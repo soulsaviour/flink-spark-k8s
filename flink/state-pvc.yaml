@@ -1,0 +1,14 @@
+# Checkpoints, savepoints and HA metadata for Flink jobs. The JobManager and
+# TaskManagers all write here, so on a multi-node cluster this needs a
+# ReadWriteMany class (EFS, NFS, CephFS). In production, S3 is the usual choice.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: flink-state
+  namespace: flink
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi

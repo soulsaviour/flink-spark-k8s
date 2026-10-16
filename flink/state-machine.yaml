@@ -1,0 +1,53 @@
+# Flink's StateMachineExample, a stateful streaming job, run in application
+# mode by the Flink Kubernetes Operator.
+#
+# - Checkpoints every 30 s with RocksDB state, so a restart loses at most 30 s.
+# - upgradeMode: savepoint - on a spec change the operator takes a savepoint,
+#   stops the job and restarts the new version from it.
+# - Kubernetes HA, so a lost JobManager pod resumes from the last checkpoint.
+apiVersion: flink.apache.org/v1beta1
+kind: FlinkDeployment
+metadata:
+  name: state-machine
+  namespace: flink
+spec:
+  image: flink:2.2.1-java17
+  flinkVersion: v2_2
+  serviceAccount: flink
+  flinkConfiguration:
+    taskmanager.numberOfTaskSlots: "2"
+    state.backend.type: rocksdb
+    execution.checkpointing.interval: 30s
+    execution.checkpointing.dir: file:///flink-data/checkpoints
+    execution.checkpointing.savepoint-dir: file:///flink-data/savepoints
+    high-availability.type: kubernetes
+    high-availability.storageDir: file:///flink-data/ha
+    restart-strategy.type: exponential-delay
+  jobManager:
+    replicas: 1
+    resource:
+      memory: 1024m
+      cpu: 0.5
+  taskManager:
+    resource:
+      memory: 1536m
+      cpu: 1
+  podTemplate:
+    spec:
+      securityContext:
+        # The image runs as the flink user (9999); this lets it write the volume.
+        fsGroup: 9999
+      containers:
+        - name: flink-main-container
+          volumeMounts:
+            - name: flink-data
+              mountPath: /flink-data
+      volumes:
+        - name: flink-data
+          persistentVolumeClaim:
+            claimName: flink-state
+  job:
+    jarURI: local:///opt/flink/examples/streaming/StateMachineExample.jar
+    parallelism: 2
+    upgradeMode: savepoint
+    state: running
