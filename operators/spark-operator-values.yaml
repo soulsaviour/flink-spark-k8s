@@ -4,6 +4,10 @@ spark:
   # service account and RBAC there.
   jobNamespaces:
     - spark-jobs
+  serviceAccount:
+    # IRSA: drivers and executors assume this role for S3 access.
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/spark-jobs-s3
 
 controller:
   resources:

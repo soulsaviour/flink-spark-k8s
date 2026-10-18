@@ -1,0 +1,48 @@
+# Daily sales summary over the orders data in S3, run by the Spark operator.
+# The driver and executors get S3 access through IRSA: the service account is
+# annotated with an IAM role in operators/spark-operator-values.yaml.
+apiVersion: sparkoperator.k8s.io/v1beta2
+kind: SparkApplication
+metadata:
+  name: sales-by-region
+  namespace: spark-jobs
+spec:
+  type: Python
+  mode: cluster
+  image: ghcr.io/your-github-user/spark-jobs:0.1.0
+  imagePullPolicy: IfNotPresent
+  mainApplicationFile: local:///opt/spark/jobs/sales_by_region.py
+  arguments:
+    - --input
+    - s3a://example-data-lake/raw/orders/
+    - --input-format
+    - parquet
+    - --output
+    - s3a://example-data-lake/reports/sales_by_region/
+  sparkVersion: "4.2.0"
+  sparkConf:
+    spark.hadoop.fs.s3a.aws.credentials.provider: software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider
+    spark.sql.adaptive.enabled: "true"
+    spark.sql.session.timeZone: UTC
+  dynamicAllocation:
+    enabled: true
+    initialExecutors: 2
+    minExecutors: 1
+    maxExecutors: 8
+  restartPolicy:
+    type: OnFailure
+    onFailureRetries: 2
+    onFailureRetryInterval: 60
+    onSubmissionFailureRetries: 3
+    onSubmissionFailureRetryInterval: 30
+  driver:
+    cores: 1
+    memory: 1g
+    serviceAccount: spark-operator-spark
+    labels:
+      app: sales-by-region
+  executor:
+    cores: 2
+    memory: 4g
+    labels:
+      app: sales-by-region
